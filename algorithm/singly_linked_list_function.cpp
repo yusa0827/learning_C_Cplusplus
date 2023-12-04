@@ -194,6 +194,91 @@ void drop(int value){
 }
 
 
+// 末尾を削除する
+// 設計
+// ノードの next　の next が存在するかを確認する
+// ノードの next　の next が NULL であるものが、ノードの next　の nextが 最後のノード
+// ノードの next を NULL にする
+// 例
+// node_2 がターゲット
+// node_2 の next は node_3
+// node_3 の next の next は node_3 の next
+// 誤解
+// next の next といわれると、2個進んでいるように聞こえるが、初めの next は node 自身の next を指すため、 1つだけ進むことになる
+void pop(single_linked_list* node_start){
+
+    /*
+
+    ■ ステップ1
+      temp->next->next == NULL => node_2->next == NULL => node_2 の next は [node_3] を示す
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+┌-> +   self address     +     ┌-> +   self address      +     ┌->  *   self address     +  
+|   +                    +     |   +                     +     |    *                    +  
+|   ++++++++++++++++++++++     |   +++++++++++++++++++++++     |    ++++++++++++++++++++++  
+|   +   value = 1        +     |   +   value = 2         +     |    *   value = 3        +  
+|   +   next  = node_2   + ----┘   +   next  = [node_3]  + ----┘    *   next  = NULL     +
+|   ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++
+|
+|   <temp>          
+|   ++++++++++++++++++++++
+|   + temp               +
+|   ++++++++++++++++++++++
+└-- +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = &node_3  +
+ 　 ++++++++++++++++++++++
+
+    ■ ステップ2
+      temp->next->next == NULL => node_3->next == NULL => node_3 の next は [NULL] を示す
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +     ┌->  *   self address     +  
+    +                    +     |┌->+                     +     |    *                    +  
+    ++++++++++++++++++++++     ||  +++++++++++++++++++++++     |    ++++++++++++++++++++++  
+    +   value = 1        +     ||  +   value = 2         +     |    *   value = 3        +  
+    +   next  = node_2   + ----┘|  +   next  = node_3    + ----┘    *   next  = [NULL]   +
+    ++++++++++++++++++++++      |  +++++++++++++++++++++++          ++++++++++++++++++++++
+┌-------------------------------┘
+|   <temp>          
+|   ++++++++++++++++++++++
+|   + temp               +
+|   ++++++++++++++++++++++
+└-- +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = &node_3  +
+ 　 ++++++++++++++++++++++
+
+    */
+
+    single_linked_list* temp;
+    single_linked_list* node_end;
+    temp = node_start;
+    while(true){
+        if(temp->next->next == NULL){
+            node_end = temp->next;
+            temp->next = NULL;
+            break;
+        }
+       temp = temp->next;
+    }
+
+    //　使わない 最後の ノードのメモリを開放する
+    destory(node_end);
+
+}
+
+
 int main(){
 
     // インスタンス化
@@ -224,7 +309,13 @@ int main(){
     // append_node(node_start, node_3);
     // print_list(node_start);
 
+    // pop関数
+    pop(node_start);
+    print_list(node_start);
 
+    // node_3 を追加する
+    append_node(node_start, node_3);
+    print_list(node_start);
 
     // 終了
     destory(node_start);
