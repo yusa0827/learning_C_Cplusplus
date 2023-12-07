@@ -19,6 +19,15 @@ drop関数を作成する
 リングバッファを作成したい
   エンドのポインタをもつ
 
+
+単方向リストを扱うときの注意点
+・node->next->next, node->next->next->value など、次の次のメモリにアクセスするときに、
+  そのメモリへアクセスしても安全か(NULLではないか)を確認する必要がある
+    システムがダウンするレベルである
+・リストからはずしたポインタは、再度リストにアクセスできないように、nextのアドレスをNULL にする
+
+疑問：
+関数内でメモリを確保した場合、関数を閉じるとメモリは解放されるのか
 */
 
 // 初期化
@@ -184,12 +193,197 @@ void append_node(single_linked_list* node_start, single_linked_list* node){
 }
 
 // 特定の値をリストから削除する
-// テストケース1 : スタートのnode
+// テストケース1 : スタートのnode -> 制約によりスタートノードは削除できない を付加
 // テストケース2：中間のnode
 // テストケース3:最後のnode
 // テストケース4:valueがリストに存在しない
 
-void drop(int value){
+void drop(single_linked_list* node_start, int value){
+
+    /*
+    制約：一番最初のノードは消すことができない
+    動的にメモリを確保したため・・・？
+    node_start の値に node_2 を書き換えたら問題ないのだが、それはメモリを操作したことにはならない
+
+    ■ node_start を削除する場合
+    制約としてできないようにする
+
+
+    ■ 中間のノード を削除する場合
+    <node_start>                   <node_2>                        <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++         ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +         + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++         ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +     ┌-> *   self address     +  
+    +                    +     |   +                     +     |   *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++     |   ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +     |   *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = node_3    + ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++      　  +++++++++++++++++++++++        ++++++++++++++++++++++
+                                                            
+    <temp>                    
+    ++++++++++++++++++++++
+    + temp               +
+    ++++++++++++++++++++++
+    +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = node_2   +
+ 　 ++++++++++++++++++++++ 
+
+    : node_start->next->next のアドレスを、temp で保持する
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +     ┌->  *   self address     +  
+    +                    +     |   +                     +     |┌-> *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++     ||   ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +     ||   *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = node_3    + ----┘|   *   next  = NULL     +
+    ++++++++++++++++++++++      　  +++++++++++++++++++++++     |   ++++++++++++++++++++++
+┌---------------------------------------------------------------┘                         
+|   <temp>                    
+|   ++++++++++++++++++++++
+|   + temp               +
+|   ++++++++++++++++++++++
+└-- +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = node_2   +
+ 　 ++++++++++++++++++++++ 
+
+    : node_start->next->next のアドレスを、NULL に変更する
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +          *   self address     +  
+    +                    +     |   +                     +      ┌-> *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = NULL      +      |   *   next  = NULL     +
+    ++++++++++++++++++++++      　  +++++++++++++++++++++++     |   ++++++++++++++++++++++
+┌---------------------------------------------------------------┘                         
+|   <temp>                    
+|   ++++++++++++++++++++++
+|   + temp               +
+|   ++++++++++++++++++++++
+└-- +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = node_2   +
+ 　 ++++++++++++++++++++++ 
+
+
+    : tempを node_start->next->next に代入する、同じアドレスを指すようにする
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +         +   self address      +     ┌--> *   self address     +  
+    +                    +         +                     +     |┌-> *                    +  
+    ++++++++++++++++++++++         +++++++++++++++++++++++     ||   ++++++++++++++++++++++  
+    +   value = 1        +         +   value = 2         +     ||   *   value = 3        +  
+    +   next  = node_2   + ----┐   +   next  = NULL      +     ||   *   next  = NULL     +
+    ++++++++++++++++++++++     |　  +++++++++++++++++++++++    ||   ++++++++++++++++++++++
+                               └-------------------------------┘|
+┌---------------------------------------------------------------┘                         
+|   <temp>                    
+|   ++++++++++++++++++++++
+|   + temp               +
+|   ++++++++++++++++++++++
+└-- +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = node_2   +
+ 　 ++++++++++++++++++++++ 
+
+    ■ 最後のノード を削除する場合
+      next->next が NULL だった場合、 pop関数を呼ぶ
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +      ┌-> *   self address     +  
+    +                    +     |   +                     +      |   *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++
+
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +          *   self address     +  
+    +                    +     |   +                     +          *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +          *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = NULL      +          *   next  = NULL     +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++
+
+    */
+
+    cout << "<drop() :" << value << ">" << endl;
+
+    // 注意
+    // メモリに安全にアクセスできるかを確認する
+
+    // インスタンス化 node_start の値を保持する
+    single_linked_list* temp_node_start;
+    temp_node_start = node_start;
+   
+    while(true){
+
+        // cout << "temp_node_start->value = " << temp_node_start->value << endl;
+
+        // 最後のノードの場合は、無視する
+        if(temp_node_start->next == NULL){
+            cout << "temp_node_start->next == NULL" <<  endl;
+            break;
+        }
+
+        // 中間のノードを削除する
+        if(temp_node_start->next->value == value){
+
+            single_linked_list* temp;
+
+            // 最後のノードを指していた場合は、NULL にする
+            if(temp_node_start->next->next == NULL){
+                temp_node_start->next = NULL;
+                break;
+            }
+
+            // node_startからnext next でしかたどれないため、temp に一時保存
+            temp = temp_node_start->next->next;
+
+            temp_node_start->next->next = NULL;
+
+            // 一時保持した temp のアドレスを temp_node_start->next に代入する
+            temp_node_start->next = temp;
+
+            break;
+        }
+
+        // temp_node_start の next next が 存在しているか
+        if(temp_node_start->next->next != NULL){
+
+            temp_node_start = temp_node_start->next;
+            continue;
+        }
+
+        cout << "No exit : value =" << value <<  endl;
+    }
 
 }
 
@@ -274,7 +468,7 @@ void pop(single_linked_list* node_start){
     }
 
     //　使わない 最後の ノードのメモリを開放する
-    destory(node_end);
+    // destory(node_end);
 
 }
 
@@ -316,6 +510,28 @@ int main(){
     // node_3 を追加する
     append_node(node_start, node_3);
     print_list(node_start);
+
+    // 中間ノード value = 2 のノードを削除する
+    drop(node_start, 2);
+    // node_2 を削除したので、node_2->next のアドレスがNULL であることを確認する
+    print_node(node_2);
+    print_list(node_start);
+
+    // node_2 を追加
+    append_node(node_start, node_2);
+    print_list(node_start);
+
+    // インスタンス化
+    single_linked_list* node_4 = init_node(4);
+
+    // node_4 を追加
+    append_node(node_start, node_4);
+    print_list(node_start);
+
+    // 最終ノード value = 4 のノードを削除する
+    drop(node_start, 4);
+    print_list(node_start);
+
 
     // 終了
     destory(node_start);
