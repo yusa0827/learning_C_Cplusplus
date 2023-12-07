@@ -472,6 +472,212 @@ void pop(single_linked_list* node_start){
 
 }
 
+// ノードを挿入する
+void insert(single_linked_list* node_start, int node_number, single_linked_list* node){
+    
+    /*
+    ■ 最初のノード に 特定ノードを挿入する場合
+      制約：最初のノード に 特定ノードを挿入することはできない、とする
+
+    <node_start>                   <node_2>                         <node_3>              
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +         + node_2              +          + node_3             +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌-> +   self address      +      ┌-> *   self address     +  
+    +                    +     |   +                     +      |   *                    +  
+    ++++++++++++++++++++++     |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     |   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++
+
+
+    <node>                
+    ++++++++++++++++++++++
+    + temp               +
+    ++++++++++++++++++++++
+    +   self address     +
+    +                    +
+    ++++++++++++++++++++++
+    +   value = 1        +
+    +   next  = node_2   +
+    ++++++++++++++++++++++
+
+
+    ■ 中間ノード に 特定ノードを挿入する場合
+      node_start -> node_2 から node_start -> node -> node_2 とする
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+    +                    +     |    +                     +      |   *                    +  
+    ++++++++++++++++++++++     |    +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     |    +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘    +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++
+                                     
+                                    <node>                
+                                    ++++++++++++++++++++++
+                                    + temp               +
+                                    ++++++++++++++++++++++
+                                    +   self address     +
+                                    +                    +
+                                    ++++++++++++++++++++++
+                                    +   value = 1        +
+                                    +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+    : node_2 を node の next でさす
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+    +                    +     |┌-> +                     +      |   *                    +  
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     ||   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘|   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++      |   +++++++++++++++++++++++          ++++++++++++++++++++++
+                                |
+                                |   <node>                
+                                |   ++++++++++++++++++++++
+                                |   + temp               +
+                                |   ++++++++++++++++++++++
+                                |   +   self address     +
+                                |   +                    +
+                                |   ++++++++++++++++++++++
+                                |   +   value = 1        +
+                                └-- +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+    : node を node_start の next でさす
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +      ┌-> +   self address      +      ┌-> *   self address     +  
+    +                    +      |   +                     +      |   *                    +  
+    ++++++++++++++++++++++      |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +      |   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┐|   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++          ++++++++++++++++++++++
+                               ||
+                               ||   <node>                
+                               ||   ++++++++++++++++++++++
+                               ||   + temp               +
+                               ||   ++++++++++++++++++++++
+                               └|-->+   self address     +
+                                |   +                    +
+                                |   ++++++++++++++++++++++
+                                |   +   value = 1        +
+                                └-- +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+
+
+    ■ 最終ノード に 特定ノードを追加する場合
+      node_start -> node_2 -> node_3 から node_start -> node_2 -> node_3 -> node とする
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+    +                    +     |    +                     +      |   *                    +  
+    ++++++++++++++++++++++     |    +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     |    +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘    +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++
+                                     
+                                    <node>                
+                                    ++++++++++++++++++++++
+                                    + temp               +
+                                    ++++++++++++++++++++++
+                                    +   self address     +
+                                    +                    +
+                                    ++++++++++++++++++++++
+                                    +   value = 1        +
+                                    +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+    : node_2 を node の next でさす
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+    +                    +     |┌-> +                     +      |   *                    +  
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     ||   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┘|   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++      |   +++++++++++++++++++++++          ++++++++++++++++++++++
+                                |
+                                |   <node>                
+                                |   ++++++++++++++++++++++
+                                |   + temp               +
+                                |   ++++++++++++++++++++++
+                                |   +   self address     +
+                                |   +                    +
+                                |   ++++++++++++++++++++++
+                                |   +   value = 1        +
+                                └-- +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+    : node を node_start の next でさす
+
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +      ┌-> +   self address      +      ┌-> *   self address     +  
+    +                    +      |   +                     +      |   *                    +  
+    ++++++++++++++++++++++      |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +      |   +   value = 2         +      |   *   value = 3        +  
+    +   next  = node_2   + ----┐|   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++          ++++++++++++++++++++++
+                               ||
+                               ||   <node>                
+                               ||   ++++++++++++++++++++++
+                               ||   + temp               +
+                               ||   ++++++++++++++++++++++
+                               └|-->+   self address     +
+                                |   +                    +
+                                |   ++++++++++++++++++++++
+                                |   +   value = 1        +
+                                └-- +   next  = node_2   +
+                                    ++++++++++++++++++++++
+
+    */
+    
+
+    single_linked_list* temp;
+    temp = node_start;
+
+    int temp_node_number = 1;
+
+    while(true){
+
+        if(temp_node_number == node_number){
+
+            node->next = temp->next;
+            temp->next = node;
+            break;
+        }
+
+        if(temp->next == NULL){
+            break;
+        }
+
+        temp = temp->next;
+        temp_node_number++;
+
+    }
+}
+
 
 int main(){
 
@@ -531,6 +737,32 @@ int main(){
     // 最終ノード value = 4 のノードを削除する
     drop(node_start, 4);
     print_list(node_start);
+
+    // インスタンス化
+    single_linked_list* node_5 = init_node(5);
+
+    // 挿入:中間ノード node_1 の 次に node_5 を挿入する
+    int inserted_node_numder;
+    inserted_node_numder = 1;
+    insert(node_start, inserted_node_numder, node_5);
+    print_list(node_start);
+
+    // インスタンス化
+    single_linked_list* node_6 = init_node(6);
+
+    // 挿入:最終ノード node_2 の 次に node_5 を挿入する
+    inserted_node_numder = 4;
+    insert(node_start, inserted_node_numder, node_6);
+    print_list(node_start);
+
+    // インスタンス化
+    single_linked_list* node_7 = init_node(7);
+
+    // 挿入:最終ノードを超えて node_7 を挿入しようとするが、挿入できないことを確認する
+    inserted_node_numder = 100;
+    insert(node_start, inserted_node_numder, node_7);
+    print_list(node_start);
+
 
 
     // 終了
