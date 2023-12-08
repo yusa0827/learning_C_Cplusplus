@@ -416,7 +416,7 @@ void pop(single_linked_list* node_start){
 |   +   value = 1        +     |   +   value = 2         +     |    *   value = 3        +  
 |   +   next  = node_2   + ----┘   +   next  = [node_3]  + ----┘    *   next  = NULL     +
 |   ++++++++++++++++++++++         +++++++++++++++++++++++          ++++++++++++++++++++++
-|
+|   
 |   <temp>          
 |   ++++++++++++++++++++++
 |   + temp               +
@@ -679,6 +679,118 @@ void insert(single_linked_list* node_start, int node_number, single_linked_list*
 }
 
 
+// リストをクリアする
+void clear(single_linked_list* node_start){
+    /*
+    色々な方法が考えられるが、 next をうまく活用する方法で clear を実現することにする
+
+    : node_start と temp_node_start を同じアドレスにする
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+┌-->+   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+|   +                    +     |    +                     +      |   *                    +  
+|   ++++++++++++++++++++++     |    +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+|   +   value = 1        +     |    +   value = 2         +      |   *   value = 3        +  
+|   +   next  = node_2   + ----┘    +   next  = node_3    +  ----┘   *   next  = NULL     +
+|   ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++
+|  
+|
+|   <temp_node_start>               <temp>                 
+|   ++++++++++++++++++++++          ++++++++++++++++++++++ 
+|   + temp               +          + temp               + 
+|   ++++++++++++++++++++++          ++++++++++++++++++++++ 
+└-- +   self address     +          +   self address     + 
+    +                    +          +                    + 
+    ++++++++++++++++++++++          ++++++++++++++++++++++ 
+
+    : temp をtemp_node_start next と 同じアドレスを指すようにする
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+┌-->+   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+|   +                    +     |┌-> +                     +      |   *                    +  
+|   ++++++++++++++++++++++     ||   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+|   +   value = 1        +     ||   +   value = 2         +      |   *   value = 3        +  
+|   +   next  = node_2   + ----┘|   +   next  = node_3    +  ----┘   *   next  = NULL     +
+|   ++++++++++++++++++++++      |   +++++++++++++++++++++++          ++++++++++++++++++++++
+|                               | 
+|                               |
+|   <temp_node_start>           |   <temp>                 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+|   + temp               +      |   + temp               + 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+└-- +   self address     +      └-- +   self address     + 
+    +                    +          +                    + 
+    ++++++++++++++++++++++          ++++++++++++++++++++++ 
+
+
+    : temp_node_start next を NULL に 代入する
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+┌-->+   self address     +          +   self address      +      ┌-> *   self address     +  
+|   +                    +      ┌-> +                     +      |   *                    +  
+|   ++++++++++++++++++++++      |   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+|   +   value = 1        +      |   +   value = 2         +      |   *   value = 3        +  
+|   +   next  = NULL     +      |   +   next  = node_3    +  ----┘   *   next  = NULL     +
+|   ++++++++++++++++++++++      |   +++++++++++++++++++++++          ++++++++++++++++++++++
+|                               | 
+|                               |
+|   <temp_node_start>           |   <temp>                 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+|   + temp               +      |   + temp               + 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+└-- +   self address     +      └-- +   self address     + 
+    +                    +          +                    + 
+    ++++++++++++++++++++++          ++++++++++++++++++++++ 
+
+    : をtemp_node_start を temp と 同じアドレスを指すようにする
+    <node_start> : 1st              <node_2> : 2nd                   <node_3> : 3rd        
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++ 
+    + node_start         +          + node_2              +          + node_3             +
+    ++++++++++++++++++++++          +++++++++++++++++++++++          ++++++++++++++++++++++  
+    +   self address     +     ┌--> +   self address      +      ┌-> *   self address     +  
+    +                    +     |┌-> +                     +      |   *                    +  
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++      |   ++++++++++++++++++++++  
+    +   value = 1        +     ||   +   value = 2         +      |   *   value = 3        +  
+    +   next  = NULL     +     ||   +   next  = node_3    +  ----┘   *   next  = NULL     +
+    ++++++++++++++++++++++     ||   +++++++++++++++++++++++          ++++++++++++++++++++++
+                               || 
+┌------------------------------┘|
+|   <temp_node_start>           |   <temp>                 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+|   + temp               +      |   + temp               + 
+|   ++++++++++++++++++++++      |   ++++++++++++++++++++++ 
+└-- +   self address     +      └-- +   self address     + 
+    +                    +          +                    + 
+    ++++++++++++++++++++++          ++++++++++++++++++++++ 
+
+    */
+
+    single_linked_list* temp;
+    single_linked_list* temp_node_start;
+    temp_node_start = node_start;
+
+    while(true){
+
+        // cout << "node_start->next  = " << temp_node_start->next <<endl;
+        // cout << "node_start->value = " << temp_node_start->value <<endl;
+
+        if(temp_node_start->next == NULL){
+            break;
+        }
+
+        temp = temp_node_start->next;
+        temp_node_start->next = NULL;
+        temp_node_start = temp;
+    }
+}
+
+
 int main(){
 
     // インスタンス化
@@ -763,6 +875,9 @@ int main(){
     insert(node_start, inserted_node_numder, node_7);
     print_list(node_start);
 
+    // リストをクリアする
+    clear(node_start);
+    print_list(node_start);
 
 
     // 終了
